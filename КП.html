@@ -1,0 +1,302 @@
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>MD4 Hashing</title>
+  </head>
+  <body>
+    <script language="JavaScript">
+
+var chrsz = 8;
+
+//кодируем текст и вычисл хеш, кодируем его
+var str_md4 = (s) => binl2hex(core_md4(str2binl(s), s.length * chrsz));
+//hmac
+var hex_hmac_md4 = (key, data) => binl2hex(core_hmac_md4(key, data));
+
+// вспомогательные функции
+var rol = (num, cnt) => (num << cnt) | (num >>> (32 - cnt));
+function safe_add(x, y)
+{
+  var lsw = (x & 0xFFFF) + (y & 0xFFFF);
+  var msw = (x >> 16) + (y >> 16) + (lsw >> 16);
+  return (msw << 16) | (lsw & 0xFFFF);
+}
+
+// функция MD4
+function cmn(q, a, b, x, s, t)
+{
+  return safe_add(rol(safe_add(safe_add(a, q), safe_add(x, t)), s), b);
+}
+
+//определение функции
+var f = (X, Y, Z) => (X & Y) | (~X & Z);
+var g = (X, Y, Z) => (X & Y) | (X & Z) | (Y & Z);
+var h = (X, Y, Z) => X ^ Y ^ Z;
+
+var round1 = (a, b, c, d, i, s) => cmn(f(b, c, d), a, 0, i, s, 0);
+var round2 = (a, b, c, d, x, s) => cmn(g(b, c, d), a, 0, x, s, 1518500249);
+var round3 = (a, b, c, d, x, s) => cmn(h(b, c, d), a, 0, x, s, 1859775393);
+
+function core_md4(x, len)
+{//расширяем сообщение до кратного значения
+  x[len >> 5] |= 0x80 << (len % 32);
+  x[(((len + 64) >>> 9) << 4) + 14] = len;
+
+  var A =  1732584193;
+  var B = -271733879;
+  var C = -1732584194;
+  var D =  271733878;
+
+  for(var i = 0; i < x.length; i += 16)
+  {
+    var AA = A;
+    var BB = B;
+    var CC = C;
+    var DD = D;
+
+    A = round1(A, B, C, D, x[i+ 0], 3 );
+    D = round1(D, A, B, C, x[i+ 1], 7 );
+    C = round1(C, D, A, B, x[i+ 2], 11);
+    B = round1(B, C, D, A, x[i+ 3], 19);
+    A = round1(A, B, C, D, x[i+ 4], 3 );
+    D = round1(D, A, B, C, x[i+ 5], 7 );
+    C = round1(C, D, A, B, x[i+ 6], 11);
+    B = round1(B, C, D, A, x[i+ 7], 19);
+    A = round1(A, B, C, D, x[i+ 8], 3 );
+    D = round1(D, A, B, C, x[i+ 9], 7 );
+    C = round1(C, D, A, B, x[i+10], 11);
+    B = round1(B, C, D, A, x[i+11], 19);
+    A = round1(A, B, C, D, x[i+12], 3 );
+    D = round1(D, A, B, C, x[i+13], 7 );
+    C = round1(C, D, A, B, x[i+14], 11);
+    B = round1(B, C, D, A, x[i+15], 19);
+
+    A = round2(A, B, C, D, x[i+ 0], 3 );
+    D = round2(D, A, B, C, x[i+ 4], 5 );
+    C = round2(C, D, A, B, x[i+ 8], 9 );
+    B = round2(B, C, D, A, x[i+12], 13);
+    A = round2(A, B, C, D, x[i+ 1], 3 );
+    D = round2(D, A, B, C, x[i+ 5], 5 );
+    C = round2(C, D, A, B, x[i+ 9], 9 );
+    B = round2(B, C, D, A, x[i+13], 13);
+    A = round2(A, B, C, D, x[i+ 2], 3 );
+    D = round2(D, A, B, C, x[i+ 6], 5 );
+    C = round2(C, D, A, B, x[i+10], 9 );
+    B = round2(B, C, D, A, x[i+14], 13);
+    A = round2(A, B, C, D, x[i+ 3], 3 );
+    D = round2(D, A, B, C, x[i+ 7], 5 );
+    C = round2(C, D, A, B, x[i+11], 9 );
+    B = round2(B, C, D, A, x[i+15], 13);
+
+    var a = A;
+    var b = B;
+    var c = C;
+    var d = D;
+
+    a = round3(a, b, c, d, x[i+ 0], 3 );
+    d = round3(d, a, b, c, x[i+ 8], 9 );
+    c = round3(c, d, a, b, x[i+ 4], 11);
+    b = round3(b, c, d, a, x[i+12], 15);
+    a = round3(a, b, c, d, x[i+ 2], 3 );
+    d = round3(d, a, b, c, x[i+10], 9 );
+    c = round3(c, d, a, b, x[i+ 6], 11);
+    b = round3(b, c, d, a, x[i+14], 15);
+    a = round3(a, b, c, d, x[i+ 1], 3 );
+    d = round3(d, a, b, c, x[i+ 9], 9 );
+    c = round3(c, d, a, b, x[i+ 5], 11);
+    b = round3(b, c, d, a, x[i+13], 15);
+    a = round3(a, b, c, d, x[i+ 3], 3 );
+    d = round3(d, a, b, c, x[i+11], 9 );
+    c = round3(c, d, a, b, x[i+ 7], 11);
+    b = round3(b, c, d, a, x[i+15], 15);
+
+    a = safe_add(a, AA);
+    b = safe_add(b, BB);
+    c = safe_add(c, CC);
+    d = safe_add(d, DD);
+
+  }
+  return Array(a, b, c, d);
+
+}
+
+//хешируем ключ
+function core_hmac_md4(key, data)
+{
+  var bkey = str2binl(key);
+  if(bkey.length > 16) bkey = core_md4(bkey, key.length * chrsz);
+
+  var ipad = Array(16), opad = Array(16);
+  for(var i = 0; i < 16; i++)
+  {
+    ipad[i] = bkey[i] ^ 0x36363636;
+    opad[i] = bkey[i] ^ 0x5C5C5C5C;
+  }
+
+//хешируем полученные ключи
+  var hash = core_md4(ipad.concat(str2binl(data)), 512 + data.length * chrsz);
+  return core_md4(opad.concat(hash), 512 + 128);
+}
+
+//в массив битов
+function str2bytes(str)
+{
+  var utf8 = unescape(encodeURIComponent(str));
+
+  var arr = [];
+  for (var i = 0; i < utf8.length; i++) {
+      arr.push(utf8.charCodeAt(i));
+  }
+  return arr;
+}
+
+//разбивает массив 16 слов по 32 бита
+function bytes2data(bytes)
+{
+  var data_words = []
+  for (var i = 0; i < bytes.length * 2; i++)
+  {
+    var q = 0
+    for (var j = 0; j < 4; j++)
+      q |= bytes[i * 4 + j] << j * 8;
+    data_words.push(q);
+  }
+  return data_words;
+}
+
+var str2binl = (str) => bytes2data(str2bytes(str));
+
+//из бинарного хеша в хекс значение
+function binl2hex(binarray)
+{
+  var hex_tab = 0 ? "0123456789ABCDEF" : "0123456789abcdef";
+  var str = "";
+  for(var i = 0; i < binarray.length * 4; i++)
+  {
+    str += hex_tab.charAt((binarray[i>>2] >> ((i%4)*8+4)) & 0xF) +
+           hex_tab.charAt((binarray[i>>2] >> ((i%4)*8  )) & 0xF);
+  }
+  return str;
+}
+</script>
+      <p id='hash'></p><br>
+
+      <textarea id='text_input' rows='10' cols='45'></textarea><br>
+      <input type=button value="Get MD4" onclick="render_hash(str_md4(document.getElementById('text_input').value))">
+      <hr/>
+      <input id='file_input' type='file'><br>
+      <input type=button value="Get MD4" onclick="hashFile(document.getElementById('file_input').files[0])">
+
+      <br/>
+      <br/>
+      <br/>
+      <br/>
+      <br/>
+      <br/>
+      <br/>
+      <br/>
+      <br/>
+      <br/>
+      <h1>HMAC</h1><p id='hmac_message'></p>
+      <input id='hmac_pwd_len' type='number' placeholder="Минимальная длина пароля">
+      <select id='hmac_pwd_mode'>
+        <option value="easy">Легкий пароль</option>
+        <option value="hard">Сложный пароль</option>
+      </select>
+      <br/>
+
+      <input id='hmac_pwd' type="password" placeholder="Введите пароль">
+      <input id='hmac_pwd_cmp' type="password" placeholder="Подтвердите пароль">
+      <br/>
+
+      <input id='hmac_file' type='file'>
+      <br/>
+      <input id='hmac_submit' type="button" value="Получить значение для HMAC" onclick="hmac1()">
+      <p id='hmac_message'></p>
+
+      <hr/>
+      <input id='hmac_pwd_check' type="password" placeholder="Введите пароль">
+      <br/>
+      <label for='hmac_hash_for_check'>Выберите файл с хешем</label>
+      <input id='hmac_hash_for_check' type='file'>
+      <br/>
+      <label for='hmac_hash_for_check'>Выберите файл</label>
+      <input id='hmac_file_for_check' type='file'>
+      <style type="text/css"> #hmac_file_for_check{
+        margin-left: 60px;
+      } 
+      </style>
+      <br/>
+      <input type="button" value="Получить значение для HMAC" onclick="hmac2()">
+      <br/>
+      <p id='hmac_message_check'></p>
+
+
+<script>
+function hashFile(file) {
+  var reader = new FileReader();
+  reader.onload = () => render_hash(str_md4(reader.result));
+  return reader.readAsText(file);
+}
+
+function hashFileHMAC(file, pwd) {
+  var reader = new FileReader();
+  reader.onload = () => render_hash(hex_hmac_md4(pwd, reader.result));
+  return reader.readAsText(file);
+}
+
+function compareHash(file, pwd, hash) {
+  var reader = new FileReader();
+  reader.onload = () => {
+    if (hash == hex_hmac_md4(pwd, reader.result))
+      document.getElementById('hmac_message_check').innerHTML = 'Хеш значения совпадают';
+    else
+      document.getElementById('hmac_message_check').innerHTML = 'Хеш значения не совпадают';
+  }
+  reader.readAsText(file);
+}
+
+function render_hash(hash) {
+  var a = document.createElement('a');
+  a.innerHTML = hash;
+  a.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(hash));
+  a.setAttribute('download', 'hash');
+  a.setAttribute('id', 'hash');
+  document.querySelector('body').replaceChild(a, document.getElementById('hash'));
+};
+
+
+function check_passwords(pwd, pwd_cmp, mode, len) {
+  if (pwd != pwd_cmp) return 'Пароли не совпадают!';
+  if (pwd.length < len) return 'Недостаточная длина пароля';
+  if (mode == 'hard' && !RegExp("(?=.*[0-9])(?=.*[a-zа-я])(?=.*[A-ZА-Я])").test(pwd))
+   return 'Пароль должен содержать как минимум одну цифру, одну строчную и одну прописную букву';
+  return false;
+}
+
+function hmac1() {
+  var pwd = document.getElementById('hmac_pwd').value;
+  var pwd_cmp = document.getElementById('hmac_pwd_cmp').value;
+  var pwd_len = document.getElementById('hmac_pwd_len').value;
+  var pwd_mode = document.getElementById('hmac_pwd_mode').value;
+
+  message = check_passwords(pwd, pwd_cmp, pwd_mode, pwd_len);
+  if (Boolean(message)) {
+    document.getElementById('hmac_message').innerHTML = message;
+  } else {
+    document.getElementById('hmac_message').innerHTML = 'Успех!';
+    hashFileHMAC(document.getElementById('hmac_file').files[0], pwd);
+  }
+}
+
+function hmac2() {
+  var pwd = document.getElementById('hmac_pwd_check').value;
+  var f = document.getElementById('hmac_hash_for_check').files[0];
+  var reader = new FileReader();
+  reader.onload = () => compareHash(document.getElementById('hmac_file_for_check').files[0], pwd, reader.result);
+  reader.readAsText(f);
+}
+
+</script>
+  </body>
+</html>
